@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdlib>
-
 namespace pid_sim {
 	struct Plant {
 		float velocity = 0, position = 0;

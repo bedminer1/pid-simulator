@@ -2,43 +2,8 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
-#include "pid_sim/math_utils.hpp"
 #include "pid_sim/plant.hpp"
-
-struct PID {
-	float Kp, Ki, Kd;
-	float error[3] {}; // most to least recent
-	float Iout = 0, max_iout;
-
-	PID(float Kp, float Ki, float Kd, float max_iout = 50) : Kp(Kp), Ki(Ki), Kd(Kd), max_iout(max_iout) {}
-
-	float calculate(float target, float actual) {
-		error[2] = error[1];
-		error[1] = error[0];
-		error[0] = target - actual;
-
-		float dt = 0.1f;
-
-		float P = Kp * error[0];
-		Iout += Ki * error[0] * dt;
-		Iout = pid_sim::clamp(Iout, -max_iout, max_iout);
-		float D = Kd * (error[0] - error[1]) / dt;
-
-		return P + Iout + D;
-	}
-
-	float bangbang(float target, float actual) {
-		error[2] = error[1];
-		error[1] = error[0];
-		error[0] = target - actual;
-
-		if (error[0] > 0) {
-			return MAXFLOAT;
-		}
-
-		return -(MAXFLOAT - 1);
-	}
-};
+#include "pid_sim/pid.hpp"
 
 struct RenderConfig {
     int width = 40;
@@ -50,7 +15,7 @@ struct RenderData {
     int step;
 };
 
-RenderData capture(const PID& pid, const pid_sim::Plant& plant, float target, float output, int step) {
+RenderData capture(const pid_sim::PID& pid, const pid_sim::Plant& plant, float target, float output, int step) {
     return {
         .target_pos = target,
         .actual_pos = plant.position,
@@ -106,7 +71,7 @@ int main(int argc, char** argv) {
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
     pid_sim::Plant car(mass, drag);
-    PID pid(Kp, Ki, Kd);
+    pid_sim::PID pid(Kp, Ki, Kd);
     float target = 100.0f;
     float dt = 0.1f;
     int width = 40;
