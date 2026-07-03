@@ -1,68 +1,98 @@
-#include <cstdio>
-#include <cmath>
-#include <random>
-#include <thread>
-#include <chrono>
 #include <cstdlib>
+#include <cstdio>
+#include <chrono>
+#include <thread>
+#include "pid_sim/math_utils.hpp"
 
 struct Plant {
-    float position = 0, velocity = 0;
-    float mass, drag;
+	float velocity = 0, position = 0;
+	float mass, drag;
+	float max_force = 200;
 
-    Plant(float mass, float drag) : mass(mass), drag(drag) {}
+	Plant(float mass, float drag) : mass(mass),  drag(drag) {}
 
-    void update(float force, float dt) {
-        float noise = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
-        float accel = force / mass - drag * velocity + noise;
-        velocity += accel * dt;
-        position += velocity * dt;
-    }
+	void update(float force, float dt) {
+		force = pid_sim::clamp(force, -max_force, max_force);
+		// ranging +- 0.25
+		float noise = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
+		// a = F/m - drag*V + noise
+		float accel = force / mass - drag * velocity + noise;
+		velocity += accel * dt;
+		position += velocity * dt;
+	}
 };
 
 struct PID {
-    float Kp, Ki, Kd;
-    float error[3] = {}, Iout = 0, max_iout;
+	float Kp, Ki, Kd;
+	float error[3] {}; // most to least recent
+	float Iout = 0, max_iout;
 
-    PID(float Kp, float Ki, float Kd, float max_iout = 50)
-        : Kp(Kp), Ki(Ki), Kd(Kd), max_iout(max_iout) {}
+	PID(float Kp, float Ki, float Kd, float max_iout = 50) : Kp(Kp), Ki(Ki), Kd(Kd), max_iout(max_iout) {}
 
-    float calculate(float set, float ref) {
-        error[2] = error[1];
-        error[1] = error[0];
-        error[0] = set - ref;
+	float calculate(float target, float actual) {
+		error[2] = error[1];
+		error[1] = error[0];
+		error[0] = target - actual;
 
-        float P = Kp * error[0];
-        Iout += Ki * error[0] * 0.1f;
-        if (Iout > max_iout) Iout = max_iout;
-        if (Iout < -max_iout) Iout = -max_iout;
-        float D = Kd * (error[0] - error[1]) / 0.1f;
+		float dt = 0.1f;
 
-        return P + Iout + D;
-    }
+		float P = Kp * error[0];
+		Iout += Ki * error[0] * dt;
+		Iout = pid_sim::clamp(Iout, -max_iout, max_iout);
+		float D = Kd * (error[0] - error[1]) / dt;
+
+		return P + Iout + D;
+	}
+
+	float bangbang(float target, float actual) {
+		error[2] = error[1];
+		error[1] = error[0];
+		error[0] = target - actual;
+
+		if (error[0] > 0) {
+			return MAXFLOAT;
+		}
+
+		return -(MAXFLOAT - 1);
+	}
 };
 
-void render(float target, float actual, float output, int step, float Kp, float Ki, float Kd, int width) {
-    printf("\033[H");
-    printf(" Kp=%.2f  Ki=%.2f  Kd=%.2f  |  step %3d\n\n", Kp, Ki, Kd, step);
-    printf(" target ──●──  │  actual ──◯──\n");
-    printf("────────────────┼────────────────────────────────\n");
+struct RenderConfig {
+    int width = 40;
+};
 
-    for (int i = 0; i < width; i++) {
-        bool is_target = (int)(target / 200.0f * width) == i;
-        bool is_actual = (int)(actual / 200.0f * width) == i;
+struct RenderData {
+    float target_pos, actual_pos, output;
+    float Kp, Ki, Kd;
+    int step;
+};
+
+RenderData capture(const PID& pid, const Plant& plant, float target, float output, int step) {
+    return {
+        .target_pos = target,
+        .actual_pos = plant.position,
+        .output = output,
+        .Kp = pid.Kp, .Ki = pid.Ki, .Kd = pid.Kd,
+        .step = step,
+    };
+}
+
+void render(const RenderConfig& cfg, const RenderData& data) {
+	printf("\033[H");
+    printf(" Kp=%.2f  Ki=%.2f  Kd=%.2f  |  step %3d\n\n", data.Kp, data.Ki, data.Kd, data.step);
+    printf(" target ──●──  │  actual ──◯──\n");
+    printf("─────────────────────────────────────────────────\n");
+
+    for (int i = 0; i < cfg.width; i++) {
+        bool is_target = (int)(data.target_pos / 200.0f * cfg.width) == i;
+        bool is_actual = (int)(data.actual_pos / 200.0f * cfg.width) == i;
         if (is_target && is_actual) printf("╳");
         else if (is_target) printf("●");
         else if (is_actual) printf("◯");
         else printf("·");
     }
     printf("\n");
-    printf("────────────────┼────────────────────────────────\n");
-    printf("               │  ");
-    for (int i = 0; i < width; i++) {
-        if ((int)(output / 200.0f * width) == i) printf("|");
-        else printf(" ");
-    }
-    printf("  output\n");
+    printf("─────────────────────────────────────────────────\n");
 }
 
 int main(int argc, char** argv) {
@@ -99,17 +129,23 @@ int main(int argc, char** argv) {
     int width = 40;
     int settled_count = 0;
 
+    RenderConfig cfg {};
+
+    float settle_threshold = 1.0f;
+
     for (int step = 0; step < 500; step++) {
         float output = pid.calculate(target, car.position);
+        // float output = pid.bangbang(target, car.position);
         car.update(output, dt);
-        render(target, car.position, output, step, Kp, Ki, Kd, width);
+        RenderData data = capture(pid, car, target, output, step);
+        render(cfg, data);
 
         float error = target - car.position;
         if (error < 0) error = -error;
-        if (error < 1.0f) {
+        if (error < settle_threshold) {
             settled_count++;
             if (settled_count >= 10) {
-                printf("\nSettled at step %d (error < 1.0 for 10 steps)\n", step - 9);
+                printf("\nSettled at step %d (error < %f for 10 steps)\n", step - 9, settle_threshold);
                 printf("Time to stability: %.1fs\n", step * dt);
                 break;
             }
