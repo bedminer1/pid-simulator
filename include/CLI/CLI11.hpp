@@ -37,7 +37,6 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <clocale>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -53,7 +52,6 @@
 #include <locale>
 #include <map>
 #include <memory>
-#include <numeric>
 #include <set>
 #include <sstream>
 #include <stdexcept>

@@ -3,24 +3,7 @@
 #include <chrono>
 #include <thread>
 #include "pid_sim/math_utils.hpp"
-
-struct Plant {
-	float velocity = 0, position = 0;
-	float mass, drag;
-	float max_force = 200;
-
-	Plant(float mass, float drag) : mass(mass),  drag(drag) {}
-
-	void update(float force, float dt) {
-		force = pid_sim::clamp(force, -max_force, max_force);
-		// ranging +- 0.25
-		float noise = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
-		// a = F/m - drag*V + noise
-		float accel = force / mass - drag * velocity + noise;
-		velocity += accel * dt;
-		position += velocity * dt;
-	}
-};
+#include "pid_sim/plant.hpp"
 
 struct PID {
 	float Kp, Ki, Kd;
@@ -67,7 +50,7 @@ struct RenderData {
     int step;
 };
 
-RenderData capture(const PID& pid, const Plant& plant, float target, float output, int step) {
+RenderData capture(const PID& pid, const pid_sim::Plant& plant, float target, float output, int step) {
     return {
         .target_pos = target,
         .actual_pos = plant.position,
@@ -122,7 +105,7 @@ int main(int argc, char** argv) {
     printf(" Press Ctrl+C to exit\n");
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    Plant car(mass, drag);
+    pid_sim::Plant car(mass, drag);
     PID pid(Kp, Ki, Kd);
     float target = 100.0f;
     float dt = 0.1f;

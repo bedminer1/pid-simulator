@@ -1,0 +1,15 @@
+#include "pid_sim/plant.hpp"
+#include "pid_sim/math_utils.hpp"
+#include <cstdlib>
+
+namespace pid_sim {
+	void Plant::update(float force, float dt) {
+		force = pid_sim::clamp(force, -max_force, max_force);
+		// ranging +- 0.25
+		float noise = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
+		// a = F/m - drag*V + noise
+		float accel = force / mass - drag * velocity + noise;
+		velocity += accel * dt;
+		position += velocity * dt;
+	};
+}
