@@ -3,7 +3,8 @@
 #include <cstdlib>
 
 namespace pid_sim {
-	void Plant::update(float force, float dt) {
+	// Advances the 1D mass-drag plant by dt, with noise and force clamping.
+void Plant::update(float force, float dt) {
 		force = pid_sim::clamp(force, -max_force, max_force);
 		// ranging +- 0.25
 		float noise = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;

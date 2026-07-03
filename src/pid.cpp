@@ -3,7 +3,8 @@
 #include <limits>
 
 namespace pid_sim {
-	float PID::calculate(float target, float actual) {
+	// PID update: error history → P + I (with anti-windup) + D → control signal.
+float PID::calculate(float target, float actual) {
 		error[2] = error[1];
 		error[1] = error[0];
 		error[0] = target - actual;
@@ -18,7 +19,8 @@ namespace pid_sim {
 		return P + Iout + D;
 	}
 
-	float PID::bangbang(float target, float actual) {
+	// Bang-bang: full positive or negative force — no proportional band.
+float PID::bangbang(float target, float actual) {
 		error[2] = error[1];
 		error[1] = error[0];
 		error[0] = target - actual;
