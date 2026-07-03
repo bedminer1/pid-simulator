@@ -11,7 +11,7 @@ namespace render {
 	    printf("        ./pid-simulator 2.0 0.5 0.3 2.4 0.02\n");
 	    printf(" Press Ctrl+C to exit\n");
 	}
-	
+	 
 	// Draws one animation frame: gains bar → target/actual bar chart.
 	void render_frame(RenderData data, int width) {
 		printf("\033[6;1H");

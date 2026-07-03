@@ -4,7 +4,7 @@
 
 namespace pid {
 	// PID update: error history → P + I (with anti-windup) + D → control signal.
-float PID::calculate(float target, float actual) {
+	float PID::calculate(float target, float actual) {
 		error[2] = error[1];
 		error[1] = error[0];
 		error[0] = target - actual;
@@ -20,7 +20,7 @@ float PID::calculate(float target, float actual) {
 	}
 
 	// Bang-bang: full positive or negative force — no proportional band.
-float PID::bangbang(float target, float actual) {
+	float PID::bangbang(float target, float actual) {
 		error[2] = error[1];
 		error[1] = error[0];
 		error[0] = target - actual;

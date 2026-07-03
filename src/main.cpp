@@ -2,9 +2,12 @@
 #include <cstdlib>
 #include <chrono>
 #include <thread>
+#include <vector>
+
 #include "pid_sim/plant.hpp"
 #include "pid_sim/pid.hpp"
 #include "pid_sim/render.hpp"
+#include "pid_sim/metrics.hpp"
 
 int main(int argc, char** argv) {
     float Kp = 1.0, Ki = 0.0, Kd = 0.0;
@@ -31,6 +34,8 @@ int main(int argc, char** argv) {
     plant::Plant car(mass, drag);
     pid::PID pid(Kp, Ki, Kd);
     float target = 100.0f;
+    std::vector<float> positions {};
+    
     int step = 0;
     float dt = 0.1f;
     int settled_count = 0;
@@ -60,6 +65,9 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
+    pid_sim::StepMetrics m = pid_sim::compute_metrics(positions, target, dt);
+    printf("rise=%.2fs overshoot=%.1f%% settle=%.2fs sse=%.3f\n",
+        m.rise_time, m.overshoot_pct, m.settling_time, m.steady_state_error);
     render::announce_end(settled, step, dt, settle_threshold, target - car.position);
 
     return 0;

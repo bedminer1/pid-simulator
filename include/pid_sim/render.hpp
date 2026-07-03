@@ -14,4 +14,5 @@ namespace render {
 	void render_frame(RenderData data, int width = 40);
 	// Settling/timeout summary printed after the sim ends.
 	void announce_end(bool settled, int step, float dt, float threshold, float error);
+	
 };
