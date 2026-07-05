@@ -2,7 +2,7 @@
 #include "pid_sim/math_utils.hpp"
 #include <limits>
 
-namespace pid_sim {
+namespace pid {
 	// PID update: error history → P + I (with anti-windup) + D → control signal.
 float PID::calculate(float target, float actual) {
 		error[2] = error[1];

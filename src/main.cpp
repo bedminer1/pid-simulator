@@ -25,11 +25,11 @@ int main(int argc, char** argv) {
     if (mass == 0) mass = 1.0f + ((float)rand() / RAND_MAX) * 4.0f;
     if (drag == 0) drag = 0.01f + ((float)rand() / RAND_MAX) * 0.49f;
 
-    pid_sim::splash(mass, drag);
+    render::splash(mass, drag);
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    pid_sim::Plant car(mass, drag);
-    pid_sim::PID pid(Kp, Ki, Kd);
+    plant::Plant car(mass, drag);
+    pid::PID pid(Kp, Ki, Kd);
     float target = 100.0f;
     int step = 0;
     float dt = 0.1f;
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
         float output = pid.calculate(target, car.position);
         // float output = pid.bangbang(target, car.position);
         car.update(output, dt);
-        pid_sim::render_frame({.step = step, .Kp = pid.Kp, .Ki = pid.Ki, .Kd = pid.Kd,
+        render::render_frame({.step = step, .Kp = pid.Kp, .Ki = pid.Ki, .Kd = pid.Kd,
             .target = target, .actual = car.position, .output = output});
 
         float error = fabs(target - car.position);
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
-    pid_sim::announce_end(settled, step, dt, settle_threshold, target - car.position);
+    render::announce_end(settled, step, dt, settle_threshold, target - car.position);
 
     return 0;
 }

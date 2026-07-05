@@ -1,6 +1,6 @@
 #pragma once
 
-namespace pid_sim {
+namespace pid {
 	// PID controller with anti-windup on the integral term.
 	struct PID {
 		float Kp, Ki, Kd;

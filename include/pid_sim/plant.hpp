@@ -1,6 +1,6 @@
 #pragma once
 
-namespace pid_sim {
+namespace plant {
 	// 1D physics model: mass + drag + noise.
 	struct Plant {
 		float velocity = 0, position = 0;

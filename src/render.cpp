@@ -1,7 +1,7 @@
 #include "pid_sim/render.hpp"
 #include <cstdio>
 
-namespace pid_sim {
+namespace render {
 	// Clears screen and prints the car info + usage header.
 	void splash(float mass, float drag) {
 	  	printf("\033[2J\033[H");
