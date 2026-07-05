@@ -1,6 +1,6 @@
 #pragma once
 
-namespace pid_sim {
+namespace render {
 	// Snapshot of simulation state for rendering.
 	struct RenderData {
 		int step;

@@ -2,7 +2,7 @@
 #include "pid_sim/math_utils.hpp"
 #include <cstdlib>
 
-namespace pid_sim {
+namespace plant {
 	// Advances the 1D mass-drag plant by dt, with noise and force clamping.
 void Plant::update(float force, float dt) {
 		force = pid_sim::clamp(force, -max_force, max_force);
